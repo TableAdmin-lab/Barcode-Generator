@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Generator By Yoco</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JsBarcode Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&family=Playfair+Display:wght@700&display=swap');
+        
+        :root {
+            --bg-main: #0b0e14;
+            --card-main: #161b22;
+            --accent-blue: #3b82f6;
+            --accent-pink: #ec4899;
+            --border-main: #30363d;
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --input-bg: #0d1117;
+        }
+
+        body.light-mode {
+            --bg-main: #f6f8fa;
+            --card-main: #ffffff;
+            --border-main: #d0d7de;
+            --text-main: #1f2328;
+            --text-muted: #656d76;
+            --input-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .glass-card {
+            background-color: var(--card-main);
+            border: 1px solid var(--border-main);
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .neo-input {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-main);
+            color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .neo-input:focus {
+            border-color: var(--accent-blue);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+
+        @media screen {
+            #printArea { display: none; }
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white !important; color: black !important; padding: 0; margin: 0; }
+            #printArea { display: block !important; width: 100%; }
+            .barcode-print-card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                border: 1px solid #eee;
+                padding: 24px;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background-size: cover !important;
+                background-position: center !important;
+                min-height: 250px;
+            }
+            .print-grid { 
+                display: grid !important; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 15px;
+                padding: 15px;
+            }
+            .print-category-header {
+                grid-column: span 2;
+                font-weight: 800;
+                font-size: 18px;
+                text-transform: uppercase;
+                margin: 20px 0 10px 0;
+                border-bottom: 2px solid #000;
+                padding-bottom: 5px;
+            }
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+        }
+        
+        .modal-hidden { pointer-events: none; opacity: 0; }
+        .modal-hidden .modal-content { transform: scale(0.95); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 10px; }
+
+        .btn-glow-blue:hover { box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+        
+        .barcode-card-render {
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+        }
+
+        /* Tooltip Style Fixes */
+        .info-trigger { position: relative; display: inline-flex; align-items: center; }
+        .info-tooltip {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1c2128;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100; /* Higher Z-index */
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            font-size: 11px;
+            line-height: 1.4;
+            pointer-events: none;
+            border: 1px solid #30363d;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.6);
+            transform: translateY(5px);
+        }
+        
+        /* Variant for showing below the icon when at the top of a container */
+        .info-tooltip-bottom {
+            bottom: auto;
+            top: 140%;
+            transform: translateY(-5px);
+        }
+
+        .info-trigger:hover .info-tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .action-icon-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .action-icon-btn:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-6xl mx-auto no-print">
+        <!-- Top Status Bar -->
+        <div class="flex items-center justify-between mb-12 px-2">
+            <div class="flex items-center gap-3">
+                <div class="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white italic">B</div>
+                <h1 class="text-xl font-bold tracking-tight text-white dark:text-white">BARCODE GENERATOR <span class="text-xs font-normal text-slate-500 ml-2">By Yoco</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Backup and Import -->
+                <div class="flex items-center gap-1 bg-slate-800/30 p-1 rounded-xl border border-slate-700/50 mr-2">
+                    <div class="flex items-center">
+                        <button onclick="exportSnapshot()" title="Backup Registry" class="action-icon-btn p-2 rounded-lg text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <span class="info-trigger text-slate-600 ml-1 mr-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">Backup: Downloads your entire registry as a JSON file to your local computer.</span>
+                        </span>
+                    </div>
+                    <div class="w-[1px] h-4 bg-slate-700 mx-1"></div>
+                    <div class="flex items-center">
+                        <button onclick="triggerImport()" title="Import Snapshot" class="action-icon-btn p-2 rounded-lg text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </button>
+                        <span class="info-trigger text-slate-600 ml-1 mr-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">Import: Select a previously backed up JSON file to restore your registry data.</span>
+                        </span>
+                    </div>
+                    <input type="file" id="importInput" class="hidden" accept=".json" onchange="handleImport(event)">
+                </div>
+
+                <button onclick="toggleTheme()" class="theme-toggle-btn p-2 rounded-full hover:bg-slate-800/20 border border-transparent transition-all text-slate-400 hover:text-blue-500">
+                    <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+                <div class="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-800/30 px-3 py-1.5 rounded-full border border-slate-700/50">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SYSTEM READY
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="glass-card p-8 mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div>
+                    <label class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Product Identification
+                        <span class="info-trigger text-slate-500 cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">Enter the primary name of your item. This appears above the barcode.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="productName" placeholder="e.g. Coffee Beans" 
+                           class="w-full px-4 py-3 rounded-xl neo-input text-sm">
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Product Size/Variant
+                        <span class="info-trigger text-slate-500 cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">Separate with commas (e.g. Coffee Hazelnut, Coffee White Chocolate). A separate barcode will be created for each variant.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="productSizes" placeholder="e.g. Hazelnut, White Chocolate" 
+                           class="w-full px-4 py-3 rounded-xl neo-input text-sm">
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Code Value / SKU
+                        <span class="info-trigger text-slate-500 cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">The data encoded in the barcode. If left blank, a random valid value is generated for each variant.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="barcodeValue" placeholder="e.g. 123456789012" 
+                           class="w-full px-4 py-3 rounded-xl neo-input text-sm font-mono">
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Barcode format
+                        <span class="info-trigger text-slate-500 cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">Select the standard used. EAN-13 is standard for retail products globally.</span>
+                        </span>
+                    </label>
+                    <select id="barcodeFormat" onchange="updatePreview()" class="w-full px-4 py-3 rounded-xl neo-input text-sm bg-transparent cursor-pointer">
+                        <option value="EAN13" selected>EAN-13 (Retail)</option>
+                        <option value="CODE128">CODE128 (Standard)</option>
+                        <option value="UPC">UPC (12 Digits)</option>
+                        <option value="EAN8">EAN-8</option>
+                        <option value="CODE39">CODE39</option>
+                        <option value="pharmacode">Pharmacode</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Category Assignment
+                        <span class="info-trigger text-slate-500 cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="info-tooltip">Groups items in your registry. System remembers categories for quick switching.</span>
+                        </span>
+                    </label>
+                    <input type="text" id="barcodeCategory" list="categoryOptions" placeholder="Default Category"
+                           class="w-full px-4 py-3 rounded-xl neo-input text-sm bg-transparent">
+                    <datalist id="categoryOptions"></datalist>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4">
+                <button onclick="addBarcode()" class="btn-glow-blue bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add Entry
+                </button>
+                <button onclick="toggleSettings(true)" class="bg-slate-800/50 hover:bg-slate-700/50 text-slate-200 px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 border border-slate-700/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1-2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Barcode settings
+                </button>
+                <div class="h-8 w-[1px] bg-slate-800/50 mx-2"></div>
+                <button id="exportBtn" onclick="handlePrint()" class="bg-white hover:bg-slate-100 text-black px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Export
+                </button>
+            </div>
+        </div>
+
+        <!-- SEARCH AND FILTER TOOLS -->
+        <div id="filterTools" class="hidden mb-10 flex flex-col md:flex-row items-center gap-4">
+            <div class="flex-1 relative w-full">
+                <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <input type="text" id="registrySearch" oninput="renderList()" placeholder="Search product name or variant..." 
+                       class="w-full pl-12 pr-4 py-3 rounded-2xl neo-input text-sm">
+            </div>
+            <div class="w-full md:w-64">
+                <select id="registryFilterCategory" onchange="renderList()" class="w-full px-4 py-3 rounded-2xl neo-input text-sm bg-transparent cursor-pointer">
+                    <option value="all">All Categories</option>
+                    <!-- Categories injected here -->
+                </select>
+            </div>
+        </div>
+
+        <!-- Registry List -->
+        <div id="barcodeListContainer" class="space-y-12"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-32 glass-card border-dashed">
+            <div class="w-20 h-20 bg-slate-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 7h10M7 12h10m-10 5h10M5 3a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2H5z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-white dark:text-white">Registry Empty</h3>
+            <p class="text-slate-500 text-sm max-w-xs mx-auto mt-2 italic">Design your node and initialize your first production set.</p>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION MODAL (Advisory) -->
+    <div id="advisoryModal" class="no-print fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay modal-hidden transition-all duration-500">
+        <div class="modal-content relative bg-[#1c2128] w-full max-w-md rounded-3xl border border-blue-500/30 custom-shadow p-8 text-center transition-all">
+            <div class="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-4">Local Storage Active</h2>
+            <p class="text-sm text-slate-400 leading-relaxed mb-8">
+                Your data is stored strictly on this browser and device. Using a different browser or computer will result in an empty registry. Please use the <strong>Backup</strong> feature to preserve your data.
+            </p>
+            <button onclick="closeAdvisory()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all uppercase text-xs tracking-widest">
+                I Understand
+            </button>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="no-print fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay modal-hidden transition-all duration-300">
+        <div class="absolute inset-0" onclick="toggleSettings(false)"></div>
+        <!-- Note: removed overflow-hidden from modal-content to prevent tooltip clipping -->
+        <div class="modal-content relative bg-[var(--card-main)] w-full max-w-5xl rounded-3xl border border-[var(--border-main)] custom-shadow max-h-[95vh] flex flex-col transition-all duration-300">
+            <div class="px-8 py-6 border-b border-[var(--border-main)] flex items-center justify-between bg-black/5">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Barcode settings</h2>
+                    <p class="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Configure granular aesthetics</p>
+                </div>
+                <button onclick="toggleSettings(false)" class="p-2 hover:bg-slate-500/10 rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto">
+                <div class="flex flex-col lg:flex-row gap-12">
+                    <div class="flex-1 space-y-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                            <!-- Typography -->
+                            <div class="space-y-6">
+                                <h4 class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-[var(--border-main)] pb-2">
+                                    Typography
+                                    <span class="info-trigger text-slate-600 ml-auto cursor-help">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                        <span class="info-tooltip info-tooltip-bottom">Customize the font style, size and color of the product label above the barcode.</span>
+                                    </span>
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Name Color</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="color" id="nameColor" value="#000000" oninput="updatePreview()" class="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 bg-transparent">
+                                        <span id="nameColorText" class="text-xs font-mono font-bold opacity-60">#000000</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Name Size</label>
+                                    <input type="range" id="nameSize" min="8" max="24" step="1" value="10" oninput="updatePreview()" class="w-full h-1 bg-slate-300 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Font Family</label>
+                                    <select id="nameFont" onchange="updatePreview()" class="w-full px-3 py-2 rounded-lg neo-input text-xs bg-transparent">
+                                        <option value="Sans">Sans (Inter)</option>
+                                        <option value="Mono">Mono (Roboto Mono)</option>
+                                        <option value="Serif">Serif (Playfair)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Encoding -->
+                            <div class="space-y-6">
+                                <h4 class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-[var(--border-main)] pb-2">
+                                    Encoding Visuals
+                                    <span class="info-trigger text-slate-600 ml-auto cursor-help">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                        <span class="info-tooltip info-tooltip-bottom">Adjust the visual parameters of the barcode lines, the encoded number, and their background box.</span>
+                                    </span>
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Barcode Line Color</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="color" id="lineColor" value="#000000" oninput="updatePreview()" class="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 bg-transparent">
+                                        <span id="lineColorText" class="text-xs font-mono font-bold opacity-60">#000000</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Barcode Number Color</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="color" id="textColor" value="#000000" oninput="updatePreview()" class="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 bg-transparent">
+                                        <span id="textColorText" class="text-xs font-mono font-bold opacity-60">#000000</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Barcode Box Color</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="color" id="barcodeBg" value="#ffffff" oninput="updatePreview()" class="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 bg-transparent">
+                                        <span id="barcodeBgText" class="text-xs font-mono font-bold opacity-60">#FFFFFF</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Surface Layers -->
+                        <div class="space-y-6 border-t border-[var(--border-main)] pt-8">
+                            <h4 class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                                Surface Layers
+                                <span class="info-trigger text-slate-600 ml-auto cursor-help">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    <span class="info-tooltip info-tooltip-bottom">Configure the card surface color or apply custom background textures using the upload tool.</span>
+                                </span>
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Card Background</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="color" id="bgColor" value="#F7F7F8" oninput="updatePreview()" class="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 bg-transparent">
+                                        <span id="bgColorText" class="text-xs font-mono font-bold opacity-60">#F7F7F8</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <label class="flex items-center justify-center w-full h-12 bg-slate-500/5 border border-[var(--border-main)] rounded-2xl cursor-pointer hover:bg-slate-500/10 transition-all text-[10px] font-black uppercase tracking-widest">
+                                        <svg class="w-4 h-4 mr-2 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-width="2.5"/></svg>
+                                        Upload Card Texture
+                                        <input type="file" id="bgImageInput" accept="image/*" onchange="handleImageUpload(event)" class="hidden">
+                                    </label>
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" id="displayValue" checked onchange="updatePreview()" class="sr-only peer">
+                                            <div class="w-10 h-5 bg-slate-300 dark:bg-slate-700 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 relative"></div>
+                                            <span class="ml-3 text-[10px] font-bold opacity-60 uppercase tracking-widest">Display Number</span>
+                                        </label>
+                                        <button id="removeImgBtn" onclick="removeBackgroundImage()" class="hidden text-[10px] font-bold text-pink-500 hover:underline uppercase">Clear Texture</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Proportions -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
+                            <div class="col-span-2">
+                                <h4 class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 border-b border-[var(--border-main)] pb-2">
+                                    Proportions
+                                    <span class="info-trigger text-slate-600 ml-auto cursor-help">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                        <span class="info-tooltip info-tooltip-bottom">Scale the line thickness and physical height of the barcode graphic for better scan fidelity.</span>
+                                    </span>
+                                </h4>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Line Thickness</label>
+                                <input type="range" id="barWidth" min="1" max="4" step="0.5" value="2" oninput="updatePreview()" class="w-full h-1 bg-slate-300 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Barcode Height</label>
+                                <input type="range" id="barHeight" min="20" max="150" step="5" value="50" oninput="updatePreview()" class="w-full h-1 bg-slate-300 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="w-full lg:w-80">
+                        <div class="bg-black/5 p-8 rounded-3xl border border-[var(--border-main)] flex flex-col items-center">
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6">Real-time Node</h3>
+                            <div id="livePreviewContainer" class="p-6 rounded-2xl border border-[var(--border-main)] flex flex-col items-center justify-center w-full min-h-[240px] shadow-2xl relative overflow-hidden transition-colors barcode-card-render">
+                                <div id="previewBgLayer" class="absolute inset-0 z-0 pointer-events-none transition-all duration-300"></div>
+                                <p id="previewName" class="font-bold mb-4 text-center relative z-10 leading-tight">ANALYTICS PREVIEW</p>
+                                <div id="previewBarcodeBox" class="p-4 rounded-xl relative z-10 shadow-lg border border-slate-100 flex flex-col items-center">
+                                    <svg id="previewBarcode"></svg>
+                                    <p id="previewBarcodeText" class="mt-2 text-[10px] font-mono font-bold"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-8 py-6 bg-black/5 border-t border-[var(--border-main)] flex items-center justify-between">
+                <button onclick="applyToAll()" class="text-xs font-bold text-slate-500 hover:text-blue-500 transition-colors flex items-center gap-2 group uppercase tracking-widest">
+                    <svg class="group-hover:rotate-180 transition-transform duration-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 3L21 7L17 11"/><path d="M3 13V11C3 8.23858 5.23858 6 8 6H21"/><path d="M7 21L3 17L7 13"/><path d="M21 11V13C21 15.7614 18.7614 18 16 18H3"/></svg>
+                    SYNC ALL NODES
+                </button>
+                <button onclick="toggleSettings(false)" class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                    COMMIT CHANGES
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea">
+        <div id="printContent" class="print-grid"></div>
+    </div>
+
+    <script>
+        let barcodes = [];
+        let categoriesMemory = [];
+        let isDarkMode = true;
+        
+        const FONT_FAMILIES = {
+            'Sans': "'Inter', sans-serif",
+            'Mono': "'Roboto Mono', monospace",
+            'Serif': "'Playfair Display', serif"
+        };
+
+        let currentTemplateSettings = {
+            lineColor: "#000000",
+            textColor: "#000000",
+            nameColor: "#000000",
+            nameSize: 10,
+            nameFont: "Sans",
+            background: "#F7F7F8",
+            barcodeBg: "#ffffff",
+            backgroundImage: null,
+            width: 2,
+            height: 50,
+            displayValue: true
+        };
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('light-mode', !isDarkMode);
+            document.getElementById('themeIconSun').classList.toggle('hidden', isDarkMode);
+            document.getElementById('themeIconMoon').classList.toggle('hidden', !isDarkMode);
+        }
+
+        function toggleSettings(show) {
+            const modal = document.getElementById('settingsModal');
+            if (show) {
+                modal.classList.remove('modal-hidden');
+                document.body.style.overflow = 'hidden';
+                updatePreview();
+            } else {
+                modal.classList.add('modal-hidden');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function closeAdvisory() {
+            document.getElementById('advisoryModal').classList.add('modal-hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function exportSnapshot() {
+            if (barcodes.length === 0) { showToast("Registry is empty."); return; }
+            const data = { registry: barcodes, categories: categoriesMemory, settings: currentTemplateSettings, timestamp: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `barcode-registry-snapshot-${new Date().getTime()}.json`;
+            a.click();
+            showToast("Backup downloaded.");
+        }
+
+        function triggerImport() { document.getElementById('importInput').click(); }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.registry) {
+                        barcodes = data.registry;
+                        categoriesMemory = data.categories || [];
+                        currentTemplateSettings = data.settings || currentTemplateSettings;
+                        
+                        // Set inputs to settings
+                        document.getElementById('nameColor').value = currentTemplateSettings.nameColor;
+                        document.getElementById('lineColor').value = currentTemplateSettings.lineColor;
+                        document.getElementById('textColor').value = currentTemplateSettings.textColor;
+                        document.getElementById('bgColor').value = currentTemplateSettings.background;
+                        document.getElementById('barcodeBg').value = currentTemplateSettings.barcodeBg;
+                        document.getElementById('nameSize').value = currentTemplateSettings.nameSize;
+                        document.getElementById('nameFont').value = currentTemplateSettings.nameFont;
+                        document.getElementById('barWidth').value = currentTemplateSettings.width;
+                        document.getElementById('barHeight').value = currentTemplateSettings.height;
+                        document.getElementById('displayValue').checked = currentTemplateSettings.displayValue;
+
+                        updateCategorySelects();
+                        updatePreview();
+                        renderList();
+                        showToast("Registry restored.");
+                    }
+                } catch (err) { showToast("Error parsing file."); }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateCategorySelects() {
+            const datalist = document.getElementById('categoryOptions');
+            datalist.innerHTML = categoriesMemory.map(cat => `<option value="${cat}">`).join('');
+            
+            const filterSelect = document.getElementById('registryFilterCategory');
+            const currentFilter = filterSelect.value;
+            filterSelect.innerHTML = '<option value="all">All Categories</option>' + 
+                categoriesMemory.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            filterSelect.value = currentFilter;
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentTemplateSettings.backgroundImage = e.target.result;
+                    document.getElementById('removeImgBtn').classList.remove('hidden');
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeBackgroundImage() {
+            currentTemplateSettings.backgroundImage = null;
+            document.getElementById('bgImageInput').value = '';
+            document.getElementById('removeImgBtn').classList.add('hidden');
+            updatePreview();
+        }
+
+        function updatePreview() {
+            currentTemplateSettings.lineColor = document.getElementById('lineColor').value;
+            currentTemplateSettings.textColor = document.getElementById('textColor').value;
+            currentTemplateSettings.nameColor = document.getElementById('nameColor').value;
+            currentTemplateSettings.nameSize = parseInt(document.getElementById('nameSize').value);
+            currentTemplateSettings.nameFont = document.getElementById('nameFont').value;
+            currentTemplateSettings.background = document.getElementById('bgColor').value;
+            currentTemplateSettings.barcodeBg = document.getElementById('barcodeBg').value;
+            currentTemplateSettings.width = parseFloat(document.getElementById('barWidth').value);
+            currentTemplateSettings.height = parseInt(document.getElementById('barHeight').value);
+            currentTemplateSettings.displayValue = document.getElementById('displayValue').checked;
+            
+            document.getElementById('lineColorText').innerText = currentTemplateSettings.lineColor.toUpperCase();
+            document.getElementById('textColorText').innerText = currentTemplateSettings.textColor.toUpperCase();
+            document.getElementById('nameColorText').innerText = currentTemplateSettings.nameColor.toUpperCase();
+            document.getElementById('bgColorText').innerText = currentTemplateSettings.background.toUpperCase();
+            document.getElementById('barcodeBgText').innerText = currentTemplateSettings.barcodeBg.toUpperCase();
+
+            const container = document.getElementById('livePreviewContainer');
+            const bgLayer = document.getElementById('previewBgLayer');
+            const name = document.getElementById('previewName');
+            const numText = document.getElementById('previewBarcodeText');
+
+            if (currentTemplateSettings.backgroundImage) {
+                bgLayer.style.backgroundImage = `url('${currentTemplateSettings.backgroundImage}')`;
+                bgLayer.style.backgroundSize = "cover";
+                container.style.backgroundColor = "transparent";
+            } else {
+                bgLayer.style.backgroundImage = "none";
+                container.style.backgroundColor = currentTemplateSettings.background;
+            }
+            
+            document.getElementById('previewBarcodeBox').style.backgroundColor = currentTemplateSettings.barcodeBg;
+            name.style.color = currentTemplateSettings.nameColor;
+            name.style.fontSize = currentTemplateSettings.nameSize + "px";
+            name.style.fontFamily = FONT_FAMILIES[currentTemplateSettings.nameFont];
+            numText.style.color = currentTemplateSettings.textColor;
+            numText.innerText = currentTemplateSettings.displayValue ? "123456789012" : "";
+
+            try {
+                JsBarcode("#previewBarcode", "123456789012", {
+                    format: document.getElementById('barcodeFormat').value, 
+                    lineColor: currentTemplateSettings.lineColor, 
+                    background: "transparent", width: currentTemplateSettings.width, 
+                    height: 40, displayValue: false
+                });
+            } catch (e) {}
+        }
+
+        function applyToAll() {
+            if (barcodes.length === 0) return;
+            barcodes.forEach(item => item.design = JSON.parse(JSON.stringify(currentTemplateSettings)));
+            renderList();
+            showToast("Design synchronized.");
+        }
+
+        function addBarcode() {
+            const nameInp = document.getElementById('productName');
+            const sizeInp = document.getElementById('productSizes');
+            const valInp = document.getElementById('barcodeValue');
+            const format = document.getElementById('barcodeFormat').value;
+            const categoryInput = document.getElementById('barcodeCategory');
+            
+            const categoryName = categoryInput.value.trim() || "Default Category";
+            const baseName = nameInp.value.trim();
+            const sizesRaw = sizeInp.value.trim();
+
+            if (!baseName && !valInp.value.trim()) { showToast("Identity parameters required."); return; }
+
+            if (!categoriesMemory.includes(categoryName)) {
+                categoriesMemory.push(categoryName);
+                updateCategorySelects();
+            }
+
+            const sizes = sizesRaw ? sizesRaw.split(',').map(s => s.trim()).filter(s => s !== '') : [null];
+            const timestampBase = Date.now();
+
+            sizes.forEach((size, idx) => {
+                const displayName = size ? `${baseName} (${size})` : baseName;
+                let finalValue = valInp.value.trim();
+                
+                if (!finalValue) {
+                    finalValue = Math.floor(100000000000 + Math.random() * 800000000000).toString();
+                } else if (size && (format === 'CODE128' || format === 'CODE39')) {
+                    finalValue = `${finalValue}-${size}`;
+                } else if (size) {
+                    try { finalValue = (BigInt(finalValue) + BigInt(idx)).toString(); } catch(e) { finalValue = finalValue + idx; }
+                }
+
+                barcodes.push({
+                    id: timestampBase + idx + Math.floor(Math.random() * 1000),
+                    name: displayName,
+                    value: finalValue,
+                    format: format,
+                    category: categoryName,
+                    design: JSON.parse(JSON.stringify(currentTemplateSettings))
+                });
+            });
+            
+            renderList();
+            nameInp.value = ''; valInp.value = ''; sizeInp.value = '';
+            showToast(`${sizes.length} node(s) added.`);
+        }
+
+        function removeBarcode(id) {
+            barcodes = barcodes.filter(b => b.id != id);
+            renderList();
+        }
+
+        function handlePrint(singleId = null) {
+            if (barcodes.length === 0) return;
+            if (singleId) {
+                const originalList = [...barcodes];
+                const target = barcodes.find(b => b.id == singleId);
+                barcodes = [target]; renderList();
+                setTimeout(() => { window.print(); barcodes = originalList; renderList(); }, 500);
+            } else {
+                setTimeout(() => window.print(), 500);
+            }
+        }
+
+        function renderList() {
+            const container = document.getElementById('barcodeListContainer');
+            const pCont = document.getElementById('printContent');
+            const searchQuery = document.getElementById('registrySearch').value.toLowerCase();
+            const filterCat = document.getElementById('registryFilterCategory').value;
+            
+            container.innerHTML = ''; pCont.innerHTML = '';
+            document.getElementById('emptyState').classList.toggle('hidden', barcodes.length > 0);
+            document.getElementById('filterTools').classList.toggle('hidden', barcodes.length === 0);
+
+            const filteredBarcodes = barcodes.filter(b => {
+                const matchesSearch = b.name.toLowerCase().includes(searchQuery) || b.value.toLowerCase().includes(searchQuery);
+                const matchesCat = filterCat === 'all' || b.category === filterCat;
+                return matchesSearch && matchesCat;
+            });
+
+            const grouped = {};
+            filteredBarcodes.forEach(b => {
+                if (!grouped[b.category]) grouped[b.category] = [];
+                grouped[b.category].push(b);
+            });
+
+            Object.keys(grouped).forEach(catName => {
+                const section = document.createElement('div');
+                const catSlug = catName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+                section.innerHTML = `
+                    <div class="flex items-center gap-4 mb-6">
+                        <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">${catName}</h2>
+                        <div class="h-[1px] flex-1 bg-slate-800/50"></div>
+                        <span class="text-[10px] font-bold text-slate-600">${grouped[catName].length} NODES</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="grid-${catSlug}"></div>`;
+                container.appendChild(section);
+
+                const grid = document.getElementById(`grid-${catSlug}`);
+                const printHeader = document.createElement('div');
+                printHeader.className = "print-category-header";
+                printHeader.innerText = catName;
+                pCont.appendChild(printHeader);
+
+                grouped[catName].forEach(item => {
+                    const design = item.design;
+                    const cardBg = design.backgroundImage ? `background-image: url('${design.backgroundImage}'); background-color: transparent;` : `background-color: ${design.background};`;
+                    const textStyle = `color: ${design.nameColor}; font-size: ${design.nameSize}px; font-family: ${FONT_FAMILIES[design.nameFont]};`;
+
+                    const card = document.createElement('div');
+                    card.className = "glass-card p-6 flex flex-col items-center relative overflow-hidden barcode-card-render shadow-sm group";
+                    card.style.cssText = cardBg;
+                    card.innerHTML = `
+                        <div class="absolute top-4 right-4 flex gap-2 no-print z-30">
+                            <button onclick="handlePrint(${item.id})" title="Print node" class="text-slate-400 hover:text-blue-500 transition-colors bg-black/20 p-1.5 rounded-lg opacity-0 group-hover:opacity-100">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                            </button>
+                            <button onclick="removeBarcode(${item.id})" title="Remove node" class="text-slate-400 hover:text-pink-500 transition-colors bg-black/20 p-1.5 rounded-lg opacity-0 group-hover:opacity-100">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="mb-1 text-[8px] font-black uppercase tracking-widest opacity-40 z-10" style="color: ${design.lineColor}">${item.format}</div>
+                        <p class="font-bold mb-4 truncate w-full text-center tracking-tight z-10 leading-tight" style="${textStyle}">${item.name}</p>
+                        <div class="p-4 rounded-xl shadow-lg relative z-10 border border-slate-100/10 flex flex-col items-center" style="background-color: ${design.barcodeBg}">
+                            <svg id="barcode-${Math.floor(item.id)}"></svg>
+                            ${design.displayValue ? `<p class="mt-2 text-[10px] font-mono font-bold" style="color: ${design.textColor}">${item.value}</p>` : ''}
+                        </div>`;
+                    grid.appendChild(card);
+
+                    const printCard = document.createElement('div');
+                    printCard.className = "barcode-print-card";
+                    printCard.style.cssText = cardBg;
+                    printCard.innerHTML = `
+                        <p style="font-weight: 800; margin-bottom: 12px; text-transform: uppercase; ${textStyle}">${item.name}</p>
+                        <div style="background-color: ${design.barcodeBg}; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <svg id="print-barcode-${Math.floor(item.id)}"></svg>
+                            ${design.displayValue ? `<p style="font-family: monospace; font-weight: bold; font-size: 11px; margin-top: 8px; color: ${design.textColor}">${item.value}</p>` : ''}
+                        </div>`;
+                    pCont.appendChild(printCard);
+
+                    try {
+                        JsBarcode(`#barcode-${Math.floor(item.id)}`, item.value, { format: item.format, lineColor: design.lineColor, background: "transparent", width: Number(design.width), height: Number(design.height), displayValue: false, margin: 0 });
+                        JsBarcode(`#print-barcode-${Math.floor(item.id)}`, item.value, { format: item.format, lineColor: design.lineColor, background: "transparent", width: Number(design.width), height: Number(design.height), displayValue: false, margin: 0 });
+                    } catch (e) {}
+                });
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest z-[100] shadow-2xl transition-all opacity-0 translate-y-4";
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-4'), 10);
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        window.onload = () => { 
+            document.getElementById('advisoryModal').classList.remove('modal-hidden');
+            document.body.style.overflow = 'hidden';
+            updatePreview(); 
+            renderList(); 
+        };
+    </script>
+</body>
+</html>
