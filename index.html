@@ -2980,6 +2980,29 @@
                             </table>
                         </div>
                     </div>
+                    <div id="sales-open-not-closed-block"
+                        class="p-8 bg-orange-50/70 dark:bg-orange-900/10 shadow-sm border border-orange-200 dark:border-orange-500/25 rounded-xl">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="text-xl font-black text-orange-700 dark:text-orange-400 tracking-tighter uppercase">⚠ Open Tables (Sale Not Closed Off)</h2>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-[9px] font-black tracking-wide whitespace-nowrap">Value included in variance payment methods</span>
+                            </div>
+                            <span class="info-btn" onclick="salesShowInfo('payments')">ⓘ</span>
+                        </div>
+                        <p class="text-sm text-orange-800/80 dark:text-orange-200/70 leading-relaxed mb-6">
+                            Tables that have payments made but were not closed off on the POS. This excludes <strong>⚠ OPEN TABLES (No Payment Received)</strong>, where the table remains open and no payment has been received.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-4 rounded-lg bg-white/70 dark:bg-slate-950/25 border border-orange-100 dark:border-orange-500/15">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-orange-500/80 mb-1">Open Sales</p>
+                                <p id="sales-open-not-closed-count" class="text-2xl font-black text-orange-700 dark:text-orange-400">0</p>
+                            </div>
+                            <div class="p-4 rounded-lg bg-white/70 dark:bg-slate-950/25 border border-orange-100 dark:border-orange-500/15 sm:text-right">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-orange-500/80 mb-1">Outstanding Value</p>
+                                <p id="sales-open-not-closed-amount" class="text-2xl font-black text-orange-700 dark:text-orange-400">R 0.00</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="space-y-8">
                     <div
@@ -3200,59 +3223,18 @@
                 <div
                     class="p-8 border-b dark:border-darkBorder flex justify-between items-center bg-amber-50/50 dark:bg-amber-900/10">
                     <div>
-                        <h2 class="text-xl font-black text-amber-700 dark:text-amber-400 uppercase tracking-tighter">⚠
-                            Open Tables (Outstanding Payments)</h2>
-                        <p class="text-slate-400 text-xs font-medium mt-1" id="sales-open-tables-count-label">Tables
-                            without completed payment</p>
+                        <h2 class="text-xl font-black text-amber-700 dark:text-amber-400 uppercase tracking-tighter">⚠ Open Tables</h2>
+                        <p class="text-slate-400 text-xs font-medium mt-1" id="sales-open-tables-count-label">All transactions where Status is Open</p>
                     </div>
                     <span class="info-btn" onclick="salesShowInfo('opentables')">ⓘ</span>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
-                        <thead
-                            class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 uppercase text-[10px] font-black tracking-widest">
-                            <tr>
-                                <th class="px-6 py-5">Order #</th>
-                                <th class="px-6 py-4">Invoice</th>
-                                <th class="px-6 py-4">Store</th>
-                                <th class="px-6 py-4">Employee</th>
-                                <th class="px-6 py-4 text-right">Gross</th>
-                                <th class="px-6 py-4 text-right">Tip</th>
-                                <th class="px-6 py-4 text-right">Bill Total</th>
-                                <th class="px-6 py-4 text-center">View</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sales-open-tables-body" class="divide-y dark:divide-darkBorder"></tbody>
-                    </table>
-                </div>
-                <div id="sales-open-tables-pagination"
-                    class="p-6 bg-slate-50/50 dark:bg-slate-800/20 border-t dark:border-darkBorder flex justify-between items-center hidden">
-                    <div class="flex items-center gap-3">
-                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Rows:</span>
-                        <select id="sales-open-tables-rows"
-                            class="bg-white dark:bg-slate-800 border dark:border-darkBorder rounded-lg px-2 py-1.5 text-xs font-bold focus:ring-2 focus:ring-indigo-500 shadow-sm outline-none">
-                            <option value="10" selected>10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <button id="sales-open-tables-prev"
-                            class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg
-                                class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 19l-7-7 7-7" />
-                            </svg></button>
-                        <span id="sales-open-tables-page-indicator"
-                            class="text-xs font-black text-slate-500 uppercase">Page 1 of 1</span>
-                        <button id="sales-open-tables-next"
-                            class="p-2 border dark:border-darkBorder rounded-xl hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"><svg
-                                class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5l7 7-7 7" />
-                            </svg></button>
-                    </div>
+                <div id="sales-open-tables-groups" class="p-5 md:p-7 space-y-4"></div>
+                <table class="hidden"><tbody id="sales-open-tables-body"></tbody></table>
+                <div id="sales-open-tables-pagination" class="hidden">
+                    <select id="sales-open-tables-rows"><option value="10000" selected>All</option></select>
+                    <button id="sales-open-tables-prev" type="button"></button>
+                    <span id="sales-open-tables-page-indicator"></span>
+                    <button id="sales-open-tables-next" type="button"></button>
                 </div>
             </div>
 
@@ -4173,7 +4155,7 @@
                     methodsArr.forEach(m => { tenders.push({ method: m, amount: splitAmount }); });
                 }
                 return {
-                    inv: row['Invoice Number'] || row['Invoice'],
+                    inv: String(row['Invoice Number'] ?? row['Invoice'] ?? ''),
                     orderNum: row['Order Number'] || row['Order'] || '',
                     emp: row['Employee Name'] || row['Employee'],
                     site: row['Site'] || 'Unknown',
@@ -4188,9 +4170,10 @@
                     net: parseFloat(row['Net Sale Amount'] || 0),
                     tip: parseFloat(row['Tip'] || row['Total Tip'] || 0),
                     method: methodsStr,
+                    status: statusStr,
                     tenders
                 };
-            }).filter(t => t.inv);
+            });
 
             // Populate Site Filter
             const sites = [...new Set(salesAllTransactions.map(t => t.site))].sort();
@@ -4291,7 +4274,7 @@
         function salesViewInvoice(inv) {
             const txn = salesAllTransactions.find(t => t.inv === inv); if (!txn) return;
             document.getElementById('sales-modal-title').textContent = inv;
-            document.getElementById('sales-modal-subtitle').textContent = `Staff: ${txn.emp} \u2022 ${txn.time || 'Time unknown'}`;
+            document.getElementById('sales-modal-subtitle').textContent = `Store: ${txn.site || 'Unknown'} \u2022 Staff: ${txn.emp || '\u2014'} \u2022 Payment: ${txn.method || '\u2014'} \u2022 ${txn.time || 'Time unknown'}`;
             document.getElementById('sales-modal-bill-total').textContent = salesFormatCurrency(txn.billTotal);
             document.getElementById('sales-modal-paid').textContent = salesFormatCurrency(txn.gross);
             document.getElementById('sales-modal-tip').textContent = salesFormatCurrency(txn.tip);
@@ -4438,11 +4421,61 @@
 
         function salesRenderPaymentSummary(data) {
             const summaryBody = document.getElementById('sales-payment-summary-body'); if (!summaryBody) return;
-            const summary = {}; let total = 0;
-            data.forEach(t => { if (t.tenders) { t.tenders.forEach(tender => { let m = tender.method; if (m === '-' || m === '\u2014' || m.trim() === '' || m.toLowerCase() === 'dash') { m = 'Open Tables (Outstanding)'; } if (!summary[m]) summary[m] = { c: 0, a: 0 }; summary[m].c++; summary[m].a += tender.amount; total += tender.amount; }); } });
-            summaryBody.innerHTML = Object.entries(summary).sort((a, b) => b[1].a - a[1].a).map(([m, s]) => {
-                const isOpen = m.includes('Open Tables');
-                return `<tr class="dark:text-slate-300 transition-colors ${isOpen ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}"><td class="py-5 font-black uppercase tracking-tight text-xs ${isOpen ? 'text-amber-700 dark:text-amber-400' : ''}">${isOpen ? '\u26a0 ' : ''}${m}</td><td class="py-5 text-right font-bold text-slate-500">${s.c}</td><td class="py-5 text-right font-black ${isOpen ? 'text-amber-700 dark:text-amber-400' : 'text-slate-900 dark:text-white'}">${salesFormatCurrency(s.a)}</td><td class="py-5 text-right"><span class="px-2 py-1 ${isOpen ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'} rounded text-[10px] font-black tracking-tighter">${((s.a / total) * 100).toFixed(1)}%</span></td></tr>`;
+            const summary = {};
+            const noPaymentLabel = 'OPEN TABLES (No Payment Received)';
+
+            data.forEach(t => {
+                if (t.tenders) {
+                    t.tenders.forEach(tender => {
+                        let m = String(tender.method ?? '').trim();
+                        if (m === '-' || m === '\u2014' || m === '' || m.toLowerCase() === 'dash') {
+                            m = noPaymentLabel;
+                        }
+                        if (!summary[m]) summary[m] = { c: 0, a: 0, type: m === noPaymentLabel ? 'no-payment' : 'payment' };
+                        summary[m].c++;
+                        summary[m].a += Number(tender.amount) || 0;
+                    });
+                }
+            });
+
+            const transactionHasNoPayment = (t) => {
+                if (!Array.isArray(t.tenders) || t.tenders.length === 0) return true;
+                return t.tenders.every(tender => {
+                    const method = String(tender.method ?? '').trim().toLowerCase();
+                    return method === '' || method === '-' || method === '\u2014' || method === 'dash';
+                });
+            };
+
+            // This operational block is separate from Payment Breakdown and excludes
+            // transactions already counted as "No Payment Received".
+            const openSales = data.filter(t =>
+                String(t.status ?? '').trim().toLowerCase() === 'open' && !transactionHasNoPayment(t)
+            );
+            const openSalesAmount = openSales.reduce((sum, t) => sum + (Number(t.billTotal) || Number(t.gross) || 0), 0);
+            const openBlock = document.getElementById('sales-open-not-closed-block');
+            const openCount = document.getElementById('sales-open-not-closed-count');
+            const openAmount = document.getElementById('sales-open-not-closed-amount');
+            if (openCount) openCount.textContent = openSales.length.toLocaleString();
+            if (openAmount) openAmount.textContent = salesFormatCurrency(openSalesAmount);
+            if (openBlock) openBlock.classList.toggle('hidden', openSales.length === 0);
+
+            const normalRows = Object.entries(summary)
+                .filter(([m]) => m !== noPaymentLabel)
+                .sort((a, b) => b[1].a - a[1].a);
+            const rows = summary[noPaymentLabel]
+                ? [...normalRows, [noPaymentLabel, summary[noPaymentLabel]]]
+                : normalRows;
+            const total = rows.reduce((sum, [, s]) => sum + s.a, 0);
+
+            summaryBody.innerHTML = rows.map(([m, s]) => {
+                const isNoPayment = s.type === 'no-payment';
+                const rowClass = isNoPayment ? 'bg-amber-50/50 dark:bg-amber-900/10' : '';
+                const textClass = isNoPayment ? 'text-amber-700 dark:text-amber-400' : '';
+                const badgeClass = isNoPayment
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                    : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400';
+                const share = total > 0 ? ((s.a / total) * 100).toFixed(1) : '0.0';
+                return `<tr class="dark:text-slate-300 transition-colors ${rowClass}"><td class="py-5 font-black uppercase tracking-tight text-xs ${textClass}">${isNoPayment ? '\u26a0 ' : ''}${m}</td><td class="py-5 text-right font-bold text-slate-500">${s.c}</td><td class="py-5 text-right font-black ${textClass || 'text-slate-900 dark:text-white'}">${salesFormatCurrency(s.a)}</td><td class="py-5 text-right"><span class="px-2 py-1 ${badgeClass} rounded text-[10px] font-black tracking-tighter">${share}%</span></td></tr>`;
             }).join('');
         }
 
@@ -4504,7 +4537,10 @@
         }
 
         function salesRenderOpenTables(data) {
-            salesOpenTablesData = data.filter(t => { const m = (t.method || '').trim(); return m === '-' || m === '\u2014' || m === ''; });
+            salesOpenTablesData = data.filter(t => {
+                const status = String(t.status ?? '').trim().toLowerCase();
+                return status === 'open';
+            });
             const section = document.getElementById('sales-section-open');
             const tabBtn = document.getElementById('sales-tab-open');
             if (salesOpenTablesData.length === 0) {
@@ -4518,46 +4554,76 @@
         }
 
         function salesRenderOpenTablesPage() {
-            const tbody = document.getElementById('sales-open-tables-body');
+            const groupContainer = document.getElementById('sales-open-tables-groups');
             const totalRecords = salesOpenTablesData.length;
-            const totalPages = Math.ceil(totalRecords / salesOpenTablesRowsPerPage) || 1;
-            if (salesOpenTablesPage > totalPages) salesOpenTablesPage = totalPages;
-            const subset = salesOpenTablesData.slice((salesOpenTablesPage - 1) * salesOpenTablesRowsPerPage, salesOpenTablesPage * salesOpenTablesRowsPerPage);
-            document.getElementById('sales-open-tables-count-label').textContent = `${totalRecords} open table${totalRecords !== 1 ? 's' : ''} outstanding`;
-            document.getElementById('sales-open-tables-page-indicator').textContent = `Page ${salesOpenTablesPage} of ${totalPages}`;
-            document.getElementById('sales-open-tables-pagination').classList.toggle('hidden', totalRecords === 0);
-            tbody.innerHTML = subset.map(t => {
+            const noPayment = (t) => {
+                if (!Array.isArray(t.tenders) || t.tenders.length === 0) return true;
+                return t.tenders.every(tender => {
+                    const method = String(tender.method ?? '').trim().toLowerCase();
+                    return method === '' || method === '-' || method === '\u2014' || method === 'dash';
+                });
+            };
+
+            document.getElementById('sales-open-tables-count-label').textContent = `${totalRecords} open table${totalRecords !== 1 ? 's' : ''} grouped by store and open-table type`;
+            document.getElementById('sales-open-tables-page-indicator').textContent = 'Grouped view';
+            if (!groupContainer) return;
+
+            const stores = {};
+            salesOpenTablesData.forEach(t => {
+                const store = t.site || 'Unknown Store';
+                if (!stores[store]) stores[store] = { noPayment: [], paidNotClosed: [] };
+                if (noPayment(t)) stores[store].noPayment.push(t);
+                else stores[store].paidNotClosed.push(t);
+            });
+
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+            const rowHtml = (t) => {
                 const inv = t.inv || '\u2014';
                 const orderNum = t.orderNum || '\u2014';
-                const isDash = inv === '-' || inv === '\u2014' || !inv.trim();
-                // Get products for this transaction from itemized records
-                let products = '\u2014';
-                if (t.orderNum) {
-                    const matchedItems = salesItemizedRecords.filter(r => (r['Order Number'] || r['Order'] || '') === t.orderNum);
-                    if (matchedItems.length > 0) {
-                        products = matchedItems.map(i => `<span class="inline-block bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold mr-1 mb-0.5">${i['Product'] || 'Item'} x${i['Quantity'] || 1}</span>`).join('');
-                    }
-                }
-                if (products === '\u2014' && !isDash) {
-                    const matchedItems = salesItemizedRecords.filter(r => (r['Invoice Number'] || r['Invoice'] || '') === inv);
-                    if (matchedItems.length > 0) {
-                        products = matchedItems.map(i => `<span class="inline-block bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded text-[9px] font-bold mr-1 mb-0.5">${i['Product'] || 'Item'} x${i['Quantity'] || 1}</span>`).join('');
-                    }
-                }
+                const isDash = inv === '-' || inv === '\u2014' || !String(inv).trim();
+                const paymentMethod = noPayment(t) ? 'No Payment Received' : (t.method || (t.tenders || []).map(x => x.method).filter(Boolean).join(', ') || '\u2014');
+                const safeEmp = String(t.emp || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const safeOrder = String(orderNum).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const safeInv = String(inv).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 return `<tr class="hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
-                    <td class="px-6 py-5 font-black text-amber-700 dark:text-amber-400 tracking-tighter">${orderNum}</td>
-                    <td class="px-6 py-4 font-mono text-xs text-slate-400">${isDash ? '<span class="text-amber-500 font-bold">\u2014</span>' : inv}</td>
-                    <td class="px-6 py-4 text-xs font-bold text-slate-600 dark:text-slate-300">${t.site || 'Unknown'}</td>
-                    <td class="px-6 py-4 dark:text-slate-400 text-xs font-bold uppercase tracking-tight">${t.emp || '\u2014'}</td>
-                    <td class="px-6 py-4 text-right font-bold text-slate-700 dark:text-slate-300">${salesFormatCurrency(t.gross)}</td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-500">${salesFormatCurrency(t.tip)}</td>
-                    <td class="px-6 py-4 text-right font-black text-amber-700 dark:text-amber-400">${salesFormatCurrency(t.billTotal)}</td>
-                    <td class="px-6 py-4 text-center">
-                        <button onclick="salesViewOpenTableDetails('${orderNum}', '${inv}', '${(t.emp || '').replace(/'/g, "\\'")}')" class="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-600 hover:text-white transition-all shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        </button>
-                    </td>
+                    <td class="px-5 py-4 font-black text-amber-700 dark:text-amber-400 tracking-tighter">${escapeHtml(orderNum)}</td>
+                    <td class="px-5 py-4 font-mono text-xs text-slate-400">${isDash ? '<span class="text-amber-500 font-bold">\u2014</span>' : escapeHtml(inv)}</td>
+                    <td class="px-5 py-4 dark:text-slate-400 text-xs font-bold uppercase tracking-tight">${escapeHtml(t.emp || '\u2014')}</td>
+                    <td class="px-5 py-4 text-xs font-bold text-slate-600 dark:text-slate-300">${escapeHtml(paymentMethod)}</td>
+                    <td class="px-5 py-4 text-right font-bold text-slate-700 dark:text-slate-300">${salesFormatCurrency(t.gross)}</td>
+                    <td class="px-5 py-4 text-right font-bold text-emerald-500">${salesFormatCurrency(t.tip)}</td>
+                    <td class="px-5 py-4 text-right font-black text-amber-700 dark:text-amber-400">${salesFormatCurrency(t.billTotal)}</td>
+                    <td class="px-5 py-4 text-center"><button onclick="salesViewOpenTableDetails('${safeOrder}', '${safeInv}', '${safeEmp}')" class="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-600 hover:text-white transition-all shadow-sm" aria-label="View open table"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button></td>
                 </tr>`;
+            };
+
+            const typeBlock = (title, description, records, tone) => {
+                const amount = records.reduce((sum, t) => sum + (Number(t.billTotal) || Number(t.gross) || 0), 0);
+                const toneClass = tone === 'paid'
+                    ? 'border-violet-200 dark:border-violet-500/25 bg-violet-50/50 dark:bg-violet-900/10 text-violet-700 dark:text-violet-300'
+                    : 'border-amber-200 dark:border-amber-500/25 bg-amber-50/60 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400';
+                return `<details class="rounded-xl border ${toneClass} overflow-hidden" ${records.length ? '' : 'disabled'}>
+                    <summary class="list-none cursor-pointer p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 select-none">
+                        <div><div class="font-black uppercase tracking-tight text-sm">${title}</div><div class="text-[11px] opacity-70 mt-1">${description}</div></div>
+                        <div class="flex items-center gap-3"><span class="px-2.5 py-1 rounded-full bg-white/70 dark:bg-slate-950/25 text-[10px] font-black">${records.length} table${records.length !== 1 ? 's' : ''}</span><span class="font-black text-sm">${salesFormatCurrency(amount)}</span><span class="text-lg">⌄</span></div>
+                    </summary>
+                    ${records.length ? `<div class="overflow-x-auto border-t border-current/10"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-white/50 dark:bg-slate-900/25 text-slate-400 uppercase text-[10px] font-black tracking-widest"><tr><th class="px-5 py-4">Order #</th><th class="px-5 py-4">Invoice</th><th class="px-5 py-4">Employee</th><th class="px-5 py-4">Payment Method</th><th class="px-5 py-4 text-right">Gross</th><th class="px-5 py-4 text-right">Tip</th><th class="px-5 py-4 text-right">Bill Total</th><th class="px-5 py-4 text-center">View</th></tr></thead><tbody class="divide-y dark:divide-darkBorder">${records.map(rowHtml).join('')}</tbody></table></div>` : '<div class="px-5 pb-5 text-xs opacity-70">No tables in this category.</div>'}
+                </details>`;
+            };
+
+            groupContainer.innerHTML = Object.entries(stores).sort((a,b) => a[0].localeCompare(b[0])).map(([store, groups], index) => {
+                const storeRecords = [...groups.paidNotClosed, ...groups.noPayment];
+                const storeAmount = storeRecords.reduce((sum, t) => sum + (Number(t.billTotal) || Number(t.gross) || 0), 0);
+                return `<details class="group rounded-2xl border border-slate-200 dark:border-darkBorder bg-slate-50/50 dark:bg-slate-900/20 overflow-hidden" ${index === 0 ? 'open' : ''}>
+                    <summary class="list-none cursor-pointer p-5 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
+                        <div class="flex items-center gap-3"><span class="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">⌂</span><div><h3 class="font-black text-slate-900 dark:text-white uppercase tracking-tight">${escapeHtml(store)}</h3><p class="text-xs text-slate-400 mt-0.5">Open tables grouped by payment status</p></div></div>
+                        <div class="flex items-center gap-3"><span class="px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase">${storeRecords.length} Open</span><span class="font-black text-slate-700 dark:text-slate-200">${salesFormatCurrency(storeAmount)}</span><span class="text-xl text-slate-400">⌄</span></div>
+                    </summary>
+                    <div class="p-4 md:p-5 pt-0 space-y-3">
+                        ${typeBlock('⚠ Open Tables (Sale Not Closed Off)', 'Payments were made, but the sale was not closed off on the POS.', groups.paidNotClosed, 'paid')}
+                        ${typeBlock('⚠ Open Tables (No Payment Received)', 'The table remains open and no payment has been received.', groups.noPayment, 'unpaid')}
+                    </div>
+                </details>`;
             }).join('');
         }
 
@@ -4572,7 +4638,7 @@
             if (!txn) return;
 
             document.getElementById('sales-modal-title').textContent = isDash ? `Order #${orderNum}` : inv;
-            document.getElementById('sales-modal-subtitle').textContent = `Staff: ${txn.emp} \u2022 ${txn.time || 'Time unknown'}`;
+            document.getElementById('sales-modal-subtitle').textContent = `Store: ${txn.site || 'Unknown'} \u2022 Staff: ${txn.emp || '\u2014'} \u2022 Payment: ${txn.method || '\u2014'} \u2022 ${txn.time || 'Time unknown'}`;
             document.getElementById('sales-modal-bill-total').textContent = salesFormatCurrency(txn.billTotal);
             document.getElementById('sales-modal-paid').textContent = salesFormatCurrency(txn.gross);
             document.getElementById('sales-modal-tip').textContent = salesFormatCurrency(txn.tip);
