@@ -3226,7 +3226,25 @@
                         <h2 class="text-xl font-black text-amber-700 dark:text-amber-400 uppercase tracking-tighter">⚠ Open Tables</h2>
                         <p class="text-slate-400 text-xs font-medium mt-1" id="sales-open-tables-count-label">All transactions where Status is Open</p>
                     </div>
-                    <span class="info-btn" onclick="salesShowInfo('opentables')">ⓘ</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="salesExportOpenTablesToPDF()"
+                            class="flex items-center gap-2 p-2.5 px-4 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 rounded-xl transition-all font-bold text-[10px] tracking-widest uppercase hover:bg-red-600 hover:text-white shadow-sm">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                            </svg>
+                            PDF
+                        </button>
+                        <button onclick="salesExportOpenTablesToExcel()"
+                            class="flex items-center gap-2 p-2.5 px-4 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-xl transition-all font-bold text-[10px] tracking-widest uppercase hover:bg-emerald-600 hover:text-white shadow-sm">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                            </svg>
+                            Excel
+                        </button>
+                        <span class="info-btn" onclick="salesShowInfo('opentables')">ⓘ</span>
+                    </div>
                 </div>
                 <div id="sales-open-tables-groups" class="p-5 md:p-7 space-y-4"></div>
                 <table class="hidden"><tbody id="sales-open-tables-body"></tbody></table>
@@ -4160,6 +4178,8 @@
                     emp: row['Employee Name'] || row['Employee'],
                     site: row['Site'] || 'Unknown',
                     time: row['Bill Invoice Time'] || row['Time'],
+                    createdTime: row['Bill Created Time'] || row['Created Time'],
+                    duration: row['Bill Duration (minutes)'],
                     gross: parseFloat(row['Gross Sale Amount'] || row['Bill Total'] || 0),
                     billTotal,
                     vat: parseFloat(row['Total VAT'] || row['Total Tax'] || 0),
@@ -4588,6 +4608,8 @@
                 return `<tr class="hover:bg-amber-50/30 dark:hover:bg-amber-900/10 transition-colors">
                     <td class="px-5 py-4 font-black text-amber-700 dark:text-amber-400 tracking-tighter">${escapeHtml(orderNum)}</td>
                     <td class="px-5 py-4 font-mono text-xs text-slate-400">${isDash ? '<span class="text-amber-500 font-bold">\u2014</span>' : escapeHtml(inv)}</td>
+                    <td class="px-5 py-4 font-mono text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">${escapeHtml(t.createdTime || t.time || '\u2014')}</td>
+                    <td class="px-5 py-4 text-xs font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">${escapeHtml(salesFormatOpenDuration(t.createdTime))}</td>
                     <td class="px-5 py-4 dark:text-slate-400 text-xs font-bold uppercase tracking-tight">${escapeHtml(t.emp || '\u2014')}</td>
                     <td class="px-5 py-4 text-xs font-bold text-slate-600 dark:text-slate-300">${escapeHtml(paymentMethod)}</td>
                     <td class="px-5 py-4 text-right font-bold text-slate-700 dark:text-slate-300">${salesFormatCurrency(t.gross)}</td>
@@ -4607,7 +4629,7 @@
                         <div><div class="font-black uppercase tracking-tight text-sm">${title}</div><div class="text-[11px] opacity-70 mt-1">${description}</div></div>
                         <div class="flex items-center gap-3"><span class="px-2.5 py-1 rounded-full bg-white/70 dark:bg-slate-950/25 text-[10px] font-black">${records.length} table${records.length !== 1 ? 's' : ''}</span><span class="font-black text-sm">${salesFormatCurrency(amount)}</span><span class="text-lg">⌄</span></div>
                     </summary>
-                    ${records.length ? `<div class="overflow-x-auto border-t border-current/10"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-white/50 dark:bg-slate-900/25 text-slate-400 uppercase text-[10px] font-black tracking-widest"><tr><th class="px-5 py-4">Order #</th><th class="px-5 py-4">Invoice</th><th class="px-5 py-4">Employee</th><th class="px-5 py-4">Payment Method</th><th class="px-5 py-4 text-right">Gross</th><th class="px-5 py-4 text-right">Tip</th><th class="px-5 py-4 text-right">Bill Total</th><th class="px-5 py-4 text-center">View</th></tr></thead><tbody class="divide-y dark:divide-darkBorder">${records.map(rowHtml).join('')}</tbody></table></div>` : '<div class="px-5 pb-5 text-xs opacity-70">No tables in this category.</div>'}
+                    ${records.length ? `<div class="overflow-x-auto border-t border-current/10"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-white/50 dark:bg-slate-900/25 text-slate-400 uppercase text-[10px] font-black tracking-widest"><tr><th class="px-5 py-4">Order #</th><th class="px-5 py-4">Invoice</th><th class="px-5 py-4">Open Since</th><th class="px-5 py-4">Open For</th><th class="px-5 py-4">Employee</th><th class="px-5 py-4">Payment Method</th><th class="px-5 py-4 text-right">Gross</th><th class="px-5 py-4 text-right">Tip</th><th class="px-5 py-4 text-right">Bill Total</th><th class="px-5 py-4 text-center">View</th></tr></thead><tbody class="divide-y dark:divide-darkBorder">${records.map(rowHtml).join('')}</tbody></table></div>` : '<div class="px-5 pb-5 text-xs opacity-70">No tables in this category.</div>'}
                 </details>`;
             };
 
@@ -4678,6 +4700,141 @@
 
             document.getElementById('sales-txn-modal').classList.remove('hidden');
             lockScroll();
+        }
+
+        // ═══ OPEN TABLES EXPORT (EXCEL) ═══
+        function salesParseCreatedTime(str) {
+            if (!str) return null;
+            const m = String(str).match(/(\d{4})\/(\d{2})\/(\d{2})\s*-\s*(\d{2}):(\d{2})/);
+            if (!m) return null;
+            const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]), parseInt(m[4]), parseInt(m[5]));
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function salesFormatOpenDuration(createdStr) {
+            const d = salesParseCreatedTime(createdStr);
+            if (!d) return '\u2014';
+            const diffMs = Date.now() - d.getTime();
+            if (diffMs < 0) return '\u2014';
+            const mins = Math.floor(diffMs / 60000);
+            const hrs = Math.floor(mins / 60);
+            const remMins = mins % 60;
+            return hrs > 0 ? `${hrs}h ${remMins}m` : `${mins}m`;
+        }
+
+        function salesBuildOpenTablesRows() {
+            const noPayment = (t) => {
+                if (!Array.isArray(t.tenders) || t.tenders.length === 0) return true;
+                return t.tenders.every(tender => {
+                    const method = String(tender.method ?? '').trim().toLowerCase();
+                    return method === '' || method === '-' || method === '\u2014' || method === 'dash';
+                });
+            };
+            return salesOpenTablesData.map(t => {
+                const isNoPayment = noPayment(t);
+                const paymentMethod = isNoPayment ? 'No Payment Received' : (t.method || (t.tenders || []).map(x => x.method).filter(Boolean).join(', ') || '\u2014');
+                return {
+                    Store: t.site || 'Unknown Store',
+                    Type: isNoPayment ? 'Open Table (No Payment Received)' : 'Open Table (Sale Not Closed Off)',
+                    'Order #': t.orderNum || '\u2014',
+                    Invoice: t.inv || '\u2014',
+                    'Open Since': t.createdTime || t.time || '\u2014',
+                    'Open For': salesFormatOpenDuration(t.createdTime),
+                    Employee: t.emp || '\u2014',
+                    'Payment Method': paymentMethod,
+                    Gross: parseFloat((Number(t.gross) || 0).toFixed(2)),
+                    Tip: parseFloat((Number(t.tip) || 0).toFixed(2)),
+                    'Bill Total': parseFloat((Number(t.billTotal) || Number(t.gross) || 0).toFixed(2))
+                };
+            }).sort((a, b) => a.Store.localeCompare(b.Store) || a.Type.localeCompare(b.Type));
+        }
+
+        function salesExportOpenTablesToExcel() {
+            if (!salesOpenTablesData || salesOpenTablesData.length === 0) return;
+            const rows = salesBuildOpenTablesRows();
+            const totalBill = rows.reduce((sum, r) => sum + r['Bill Total'], 0);
+            const totalGross = rows.reduce((sum, r) => sum + r.Gross, 0);
+            const totalTip = rows.reduce((sum, r) => sum + r.Tip, 0);
+            rows.push({ Store: 'TOTAL', Type: '', 'Order #': '', Invoice: '', 'Open Since': '', 'Open For': '', Employee: '', 'Payment Method': `${rows.length} open table${rows.length !== 1 ? 's' : ''}`, Gross: parseFloat(totalGross.toFixed(2)), Tip: parseFloat(totalTip.toFixed(2)), 'Bill Total': parseFloat(totalBill.toFixed(2)) });
+
+            const ws = XLSX.utils.json_to_sheet(rows);
+            ws['!cols'] = [{ wch: 18 }, { wch: 32 }, { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            const lastRow = range.e.r;
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const headerCell = ws[XLSX.utils.encode_cell({ c: C, r: 0 })];
+                if (headerCell) headerCell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: 'B45309' } } };
+                const totalCell = ws[XLSX.utils.encode_cell({ c: C, r: lastRow })];
+                if (totalCell) totalCell.s = { font: { bold: true }, fill: { fgColor: { rgb: 'FEF3C7' } } };
+            }
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Open Tables');
+            XLSX.writeFile(wb, `Open_Tables_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        // ═══ OPEN TABLES EXPORT (PDF) ═══
+        function salesExportOpenTablesToPDF() {
+            if (!salesOpenTablesData || salesOpenTablesData.length === 0) return;
+            const rows = salesBuildOpenTablesRows();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const pw = doc.internal.pageSize.getWidth();
+            const dateStr = new Date().toLocaleDateString('en-ZA');
+
+            doc.setFontSize(16); doc.setFont(undefined, 'bold');
+            doc.text('Open Tables Report', 14, 18);
+            doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(120);
+            doc.text(`Generated: ${dateStr}`, 14, 24);
+            doc.setTextColor(0);
+
+            const totalBill = rows.reduce((sum, r) => sum + r['Bill Total'], 0);
+            const totalGross = rows.reduce((sum, r) => sum + r.Gross, 0);
+            const totalTip = rows.reduce((sum, r) => sum + r.Tip, 0);
+
+            doc.autoTable({
+                startY: 30,
+                head: [['Metric', 'Value']],
+                body: [
+                    ['Total Open Tables', String(rows.length)],
+                    ['Total Gross', salesFormatCurrency(totalGross)],
+                    ['Total Tip', salesFormatCurrency(totalTip)],
+                    ['Total Bill Amount Outstanding', salesFormatCurrency(totalBill)]
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [217, 119, 6], fontSize: 8, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 8 },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 90 }, 1: { halign: 'right' } }
+            });
+
+            let y = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(11); doc.setFont(undefined, 'bold');
+            doc.text('Detail', 14, y);
+            y += 4;
+
+            doc.autoTable({
+                startY: y,
+                head: [['Store', 'Type', 'Order #', 'Invoice', 'Open Since', 'Open For', 'Employee', 'Payment Method', 'Gross', 'Tip', 'Bill Total']],
+                body: rows.map(r => [r.Store, r.Type.replace('Open Table ', ''), r['Order #'], r.Invoice, r['Open Since'], r['Open For'], r.Employee, r['Payment Method'], salesFormatCurrency(r.Gross), salesFormatCurrency(r.Tip), salesFormatCurrency(r['Bill Total'])]),
+                theme: 'striped',
+                headStyles: { fillColor: [180, 83, 9], fontSize: 7, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 7 },
+                columnStyles: { 8: { halign: 'right' }, 9: { halign: 'right' }, 10: { halign: 'right', fontStyle: 'bold' } },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && data.column.index === 1) {
+                        if (String(data.cell.raw).includes('No Payment')) data.cell.styles.textColor = [217, 119, 6];
+                        else data.cell.styles.textColor = [124, 58, 237];
+                    }
+                }
+            });
+
+            doc.setFontSize(7); doc.setTextColor(150);
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.text(`Page ${i} of ${pageCount}`, pw - 25, doc.internal.pageSize.getHeight() - 8);
+            }
+
+            doc.save(`Open_Tables_Report_${new Date().toISOString().split('T')[0]}.pdf`);
         }
 
         // Sales Pagination - Audit Log
